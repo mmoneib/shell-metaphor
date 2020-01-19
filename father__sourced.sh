@@ -12,7 +12,7 @@ function fatherDies1 { # Numbering since there is no way to refer to an override
   echo "The father dies, leaving the silver spoon.";
 }
 
-function swapFatherWithSon { # overridden yet called by Son.
+function swapFatherWithSon { # Overridden yet called by Son.
   echo "Son becomes father."
 }
 
