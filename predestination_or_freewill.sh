@@ -1,5 +1,7 @@
 #!/bin/bash
 #############################################################################################
+# Predestination or Free Will?                                                              #                
+#                                                                                           #
 # Life is a mystery of our own creation, and randomness is the measure of our ignorance. We #
 # experience our freedom as well as our limitations at the very same moment, which implies  #
 # that both opposites are expressed in unison. With that in mind, and more to exoplore,     #
@@ -7,6 +9,7 @@
 # philosophy, and technology in its soup. Only if you dare to drink it.                     #
 # The game is meant to be abstract, symbolic, and highly probablistic, hence open for       # 
 # interperations. It is exhaustive by design.                                               #
+#                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
 
@@ -34,21 +37,22 @@ echo "* To know your destination, you have to guess it."
 sleep 2.7s;
 echo "* Again, may I remind you to choose wisely. :-)";
 sleep 1.8s;
+echo "* Pick a number from 1 to 100.";
 while (true); do
-  echo "* Pick a number from 1 to 100.";
   read inp; 
   if (($inp<1 || $inp>100)); then
     destiny+=$inp;
     sleep 2s;
-    echo "* Are you kidding me?";
+    echo "* Are you kidding me? Pick a number from 1 to 100.";
+    sleep 1.8s;
   elif (($inp==($RANDOM%100)+1)); then
     sleep 6s;
     echo "* Congratulations! You have chosen your destiny and it's $destiny.";
     break;
   else
     sleep 6s;
-    echo "* You haven't chosen your destiny yet. Keep looking.";
-    sleep 1s;
+    echo "* You haven't chosen your destiny yet. Keep looking. Pick a number from 1 to 100.";
+    sleep 2s;
   fi
 done
 sleep 2.6s;
