@@ -40,10 +40,10 @@ while true; do
   if [ "$wallet1" -lt "$p2Offer" ] && [ "$wallet1" -lt "$p2Offer" ]; then
     echo "A mutual transaction fails..."
     if [ "$wallet1" -lt "$p2Offer" ]; then
-      printf "Paticipant1's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$wallet1" "$p2Owns" "$p2Offer"
+      printf "%s's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$participant1" "$wallet1" "$p2Owns" "$p2Offer"
     fi
     if [ "$wallet2" -lt "$p1Offer" ]; then
-      printf "Paticipant2's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$wallet2" "$p1Owns" "$p1Offer"
+      printf "%s's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$participant2" "$wallet2" "$p1Owns" "$p1Offer"
     fi
     printf "Since one or both participants can't affor a transaction, both items' prices will be reduced by 1.\n"
     priceA="$(($priceA-1))"
