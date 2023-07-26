@@ -33,8 +33,8 @@ p1Offer="$priceA"
 p2Owns="$itemB"
 p2Offer="$priceB"
 
-printf "%s has %s in his wallet." "$participant1" "$wallet1"
-printf "%s has %s in his wallet." "$participant2" "$wallet2"
+printf "%s has %s in his wallet.\n" "$participant1" "$wallet1"
+printf "%s has %s in his wallet.\n" "$participant2" "$wallet2"
 while true; do
   printf "%s offers %s for price %s.\n" "$participant1" "$p1Owns" "$p1Offer"
   printf "%s offers %s for price %s.\n" "$participant2" "$p2Owns" "$p2Offer"
