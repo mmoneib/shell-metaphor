@@ -18,6 +18,10 @@
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
 
+# Constants
+ROUND_SLEEP_INTERVAL=0.7 # seconds, for readability
+LINE_SLEEP_INTERVAL=0.3 # seconds, more for aesthetics
+
 # Static parameters
 participant1="Elon"
 wallet1=20
@@ -34,19 +38,26 @@ p2Owns="$itemB"
 p2Offer="$priceB"
 
 printf "%s has %s in his wallet.\n" "$participant1" "$wallet1"
+sleep $LINE_SLEEP_INTERVAL
 printf "%s has %s in his wallet.\n" "$participant2" "$wallet2"
+sleep $LINE_SLEEP_INTERVAL
 while true; do
   printf "%s offers %s for price %s.\n" "$participant1" "$p1Owns" "$p1Offer"
+  sleep $LINE_SLEEP_INTERVAL
   printf "%s offers %s for price %s.\n" "$participant2" "$p2Owns" "$p2Offer"
+  sleep $LINE_SLEEP_INTERVAL
   if [ "$wallet1" -lt "$p2Offer" ] && [ "$wallet1" -lt "$p2Offer" ]; then # Condition to prevent non-simultaneous transaction.
     echo "A mutual transaction fails..."
     if [ "$wallet1" -lt "$p2Offer" ]; then
       printf "%s's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$participant1" "$wallet1" "$p2Owns" "$p2Offer"
+      sleep $LINE_SLEEP_INTERVAL
     fi
     if [ "$wallet2" -lt "$p1Offer" ]; then
       printf "%s's wallet has only %s in it. He can't afford to buy %s offered for %s.\n" "$participant2" "$wallet2" "$p1Owns" "$p1Offer"
+      sleep $LINE_SLEEP_INTERVAL
     fi
     printf "Since one or both participants can't affor a transaction, both items' prices will be reduced by 1.\n"
+    sleep $LINE_SLEEP_INTERVAL
     # Prices falling in case of lack of buyers (not because of abundance).
     priceA="$(($priceA-1))"
     priceB="$(($priceB-1))"
@@ -64,6 +75,7 @@ while true; do
       wallet1="$(($wallet1-$p2Offer))"
       wallet2="$(($wallet2+$p2Offer))"
       printf "%s buys %s from %s for %s and has %s left in his wallet and %s in %s's wallet. The item's price will increase by 1.\n" "$participant1" "$p2Owns" "$participant2" "$p2Offer" "$wallet1" "$wallet2" "$participant2"
+      sleep $LINE_SLEEP_INTERVAL
       if [ "$p2Owns" == "$itemB" ]; then
         # Price increasing in search for profit with the next transaction (buy low, sell high).
         priceB="$(($priceB+1))"
@@ -78,6 +90,7 @@ while true; do
       wallet2="$(($wallet2-$p1Offer))"
       wallet1="$(($wallet1+$p1Offer))"
       printf "%s buys %s from %s for %s and has %s left in his wallet and %s in %s's wallet. The item's price will increase by 1.\n" "$participant2" "$p1Owns" "$participant1" "$p1Offer" "$wallet2" "$wallet1" "$participant1"
+      sleep $LINE_SLEEP_INTERVAL
       if [ "$p1Owns" == "$itemB" ]; then
         # Price increasing in search for profit with the next transaction (buy low, sell high).
         priceB="$(($priceB+1))"
@@ -96,5 +109,5 @@ while true; do
     p1Offer="$p2Offer"
     p2Offer="$tmpOffer"
   fi
-  sleep 1
+  sleep $ROUND_SLEEP_INTERVAL
 done
