@@ -2,7 +2,7 @@
 
 satisficerScore=0
 maximizerScore=0
-satisficerAmbition=100
+satisficerAmbition=250
 maximizerAmbition=1000
 satisficerCache=0
 maximizerCache=0
@@ -16,7 +16,7 @@ echo "Maximizer will accumulate carrots in 1000s."
 echo "Who will get the more carrots?"
 count=0
 while true; do
-  [ $((count%10000)) -eq 0 ] && echo "After $count iterations, Satisficer has $satisficerScore carrots, while Maximizer has $maximizerScore carrots."
+  [ $((count%1)) -eq 0 ] && echo "After $count iterations, Satisficer has $satisficerScore carrots, while Maximizer has $maximizerScore carrots. Difference = $((satisficerScore-maximizerScore))"
   delta=$(($RANDOM%2+1)) # -1 or 1
   if [ $delta -eq 1 ]; then #TODO Move to functiona and add options other than this independent time series (add dependent, [ercentages...etc.).
     satisficerCache=$((satisficerCache+1))
