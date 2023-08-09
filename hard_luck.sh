@@ -1,9 +1,10 @@
 #!/bin/sh
 
 startingAmount=100
-#bets=(1 2 4 8 16 32 64 128)
+bets=(1 2 4 8 16 32 64 128)
 #bets=(1 2 3 5 8 13 21 34 55)
-bets=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21)
+#bets=(1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21)
+#bets=(1 3 9 81)
 
 amount=$startingAmount
 currBetIndex=0
