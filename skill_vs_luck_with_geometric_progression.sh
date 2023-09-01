@@ -18,6 +18,7 @@ Required Parameters:
 Optional Parmeters:
 \tAccuracy (a): The probability of a suscessful decision. Only applicable for 'random' AppliedSign.
 \tExit Amount (x): The amount at which the simulation ends.
+\tIs Raw Output? (r): If present, the ouput will be CSV.
 Examples:
 # Explicit skill quantification through a threshold of succes with luck modelled by unbiased randomness and progress through sequential scaling.
 ./skill_vs_luck_with_geometric_progression.sh -s 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g sequential -p random -x 1000000
@@ -33,7 +34,7 @@ function print_error {
   exit 1
 }
 
-while getopts "hs:b:a:x:g:p:" o; do
+while getopts "hs:b:a:x:g:p:r" o; do
   case $o in
     s) startAmount=$OPTARG ;;
     b) bets=($OPTARG) ;;
@@ -41,6 +42,7 @@ while getopts "hs:b:a:x:g:p:" o; do
     x) exitAmount=$OPTARG ;;
     g) assignation=$OPTARG ;;
     p) appliedSign=$OPTARG ;;
+    r) isRawOutput=1 ;;
     *) print_help ;;
   esac
 done
@@ -69,8 +71,9 @@ while [ $(echo "$amount>1"|bc) -eq 1 ]; do
   [ "$assignation" == "sequential" ] && [ $choice -ge $invAccuracy ] && currBetIndex=0 
   [ "$assignation" == "sequential" ] && [ $choice -lt $invAccuracy ] && sign=-1 && currBetIndex=$(((currBetIndex+1)%${#bets[@]}))
   amount=$(echo "scale=6;$amount+$amount*$perc*$sign" | bc -l) 
-  printf "Iteration %d: Choice=%d, Delta=%f, Amount=%f.\n" "$count" "$choice" "$(echo "0+$perc*$sign"|bc -l)" "$amount"
+  [ -z $isRawOutput ] && template="Iteration %d: Choice=%d, Delta=%f, Amount=%f.\n" || template="%d,%d,%f,%f\n"
+   printf "$template" "$count" "$choice" "$(echo "0+$perc*$sign"|bc -l)" "$amount" 
   [ ! -z $exitAmount ] && [ $(echo "$exitAmount<=$amount"| bc) -eq 1 ] && exit
   count=$((count+1))
 done
-echo "Ended with bankruptcy."
+[ -z $isRawOutput ] && echo "Ended with bankruptcy."
