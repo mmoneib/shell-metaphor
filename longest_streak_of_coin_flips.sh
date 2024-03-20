@@ -34,7 +34,7 @@ while getopts "n:rh" c; do
   esac
 done
 
-[ -z $numOfFlips ] && print_usage && exit 1 
+[ -z $numOfFlips ] && print_error "ERROR: The parameter Number of Flips (n) is required." && exit 1 
 
 function searchStreak {
   longestStreak=0
