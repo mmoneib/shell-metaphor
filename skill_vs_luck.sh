@@ -78,8 +78,9 @@ while [ $(echo "$amount>1"|bc) -eq 1 ]; do
   elif [ "$strategy" == "arithmetic" ]; then
     amount=$(echo "scale=6;$amount+$perc*$sign" | bc -l)
   fi
-  [ -z $isRawOutput ] && template="Iteration %d: Choice=%d, Delta=%f, Amount=%f.\n" || template="%d,%d,%f,%f\n"
-   printf "$template" "$count" "$choice" "$(echo "0+$perc*$sign"|bc -l)" "$amount" 
+  profitLoss=$(( amount-initialAmount ))
+  [ -z $isRawOutput ] && template="Iteration %d: Choice=%d, Delta=%f, Amount=%f, P/L=%f.\n" || template="%d,%d,%f,%f,%f\n"
+   printf "$template" "$count" "$choice" "$(echo "0+$perc*$sign"|bc -l)" "$amount" "$profitLoss"
   [ ! -z $exitAmount ] && [ $(echo "$exitAmount<=$amount"| bc) -eq 1 ] && exit
   count=$((count+1))
 done
