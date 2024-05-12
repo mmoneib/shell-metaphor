@@ -22,11 +22,11 @@ Optional Parmeters:
 \tIs Raw Output? (r): If present, the ouput will be CSV.
 Examples:
 # Explicit skill quantification through a threshold of succes with luck modelled by unbiased randomness and progress through sequential scaling.
-$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g sequential -p random -x 1000000
+$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g sequential -p random -x 1000000 -s geometric
 # Implicit skill representation through enumeration of choices of geometric coefficient with luck qualified by a random choice among them.
-$0 -i 100 -b \"0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 -0.4\" -g random -p fixed -x 100000
+$0 -i 100 -b \"0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 -0.4\" -g random -p fixed -x 100000 -s geometric
 # Chaotic intertwining of skill and luck through explicit, quantified skill threshold and progressing through a random choice among geometric coefficients.
-$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g random -p random -x 1000000"
+$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g random -p random -x 1000000 -s geometric"
   exit
 }
 
@@ -78,7 +78,7 @@ while [ $(echo "$amount>1"|bc) -eq 1 ]; do
   elif [ "$strategy" == "arithmetic" ]; then
     amount=$(echo "scale=6;$amount+$perc*$sign" | bc -l)
   fi
-  profitLoss=$(( amount-initialAmount ))
+  profitLoss=$(echo "scale=6;$amount-$initialAmount" | bc -l)
   [ -z $isRawOutput ] && template="Iteration %d: Choice=%d, Delta=%f, Amount=%f, P/L=%f.\n" || template="%d,%d,%f,%f,%f\n"
    printf "$template" "$count" "$choice" "$(echo "0+$perc*$sign"|bc -l)" "$amount" "$profitLoss"
   [ ! -z $exitAmount ] && [ $(echo "$exitAmount<=$amount"| bc) -eq 1 ] && exit
