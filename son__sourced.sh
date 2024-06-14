@@ -1,4 +1,12 @@
 #!/bin/bash
+#############################################################################################
+# Son (Sourced)                                                                             #                
+#                                                                                           #
+# A non-stand-alone emulation of a stateful object through sourcing. It acts as a class     #
+# extending by father__sourced.                                                             #
+#                                                                                           #
+# Conceptualized and developed by: Muhammad Moneib                                          #
+#############################################################################################
 
 silverSpoon=false;
 
@@ -13,14 +21,15 @@ function fatherDies {
 }
 
 function swapFatherWithSon {
-  # Calling the parent's same method (like Java's super) is possible with multiple sourcing. However, initializations must be accomodated by a stateful grandparent (simple_inheritance_state__sourced.sh).
+  # Calling the parent's same method (like Java's super) is possible with multiple sourcing.
   source father__sourced.sh;
-  swapFatherWithSon;
+  swapFatherWithSon; # Calls the funtion of the father.
   echo "A new son is born."
-  source son__sourced.sh
+  source son__sourced.sh # Reinstates the son's object.
 }
 
-if [[ $_was_son_sourced_before != true ]]; then
+if [[ $_was_son_sourced_before != true ]]; then # Sourced, but not yet initialized at least once.
   echo "Son's address is $address."
+  _was_son_sourced_before=true;
 fi
 
