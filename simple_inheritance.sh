@@ -3,7 +3,7 @@
 # Simple INheritance                                                                        #                
 #                                                                                           #
 # Partly an emulation of the Object-Oriented concept of Inheritence through Shell Script's  #
-# concept of sourcing, partly a satire of the social concept of inheritence.
+# concept of sourcing, partly a satire of the social concept of inheritence.                #
 #                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################

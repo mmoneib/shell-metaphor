@@ -9,6 +9,8 @@
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
 
+#TODO Add command parameters to specify the variables.
+
 originalPopulation=5000000
 flowingPopulation=1000000
 growthRateOfOriginal=1.02
