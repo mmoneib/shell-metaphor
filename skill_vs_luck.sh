@@ -26,7 +26,9 @@ $0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g sequential -p random -x 1000000 -s
 # Implicit skill representation through enumeration of choices of geometric coefficient with luck qualified by a random choice among them.
 $0 -i 100 -b \"0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 -0.4\" -g random -p fixed -x 100000 -s geometric
 # Chaotic intertwining of skill and luck through explicit, quantified skill threshold and progressing through a random choice among geometric coefficients.
-$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g random -p random -x 1000000 -s geometric"
+$0 -i 100 -a 55 -b \"0.1 0.3 0.5 0.7 0.9\" -g random -p random -x 1000000 -s geometric
+# Simulation of a determined geometric sequence accumulation.
+$0 -i 100 -b "-0.01 -0.02 0.03 -0.04 -0.05 0.06 0.07" -g sequential -p fixed -x 1000 -s geometric"
   exit
 }
 
@@ -52,7 +54,7 @@ done
 [ "$assignation" == "sequential" ] || [ "$assignation" == "random" ] || print_error "The parameter 'assignation' is required and set to either 'sequential' or 'random'."
 [ "$appliedSign" == "fixed" ] || [ "$appliedSign" == "random" ] || print_error "The parameter 'appliedSign' is required and set to either 'fixed' or 'random'."
 [ "$appliedSign" == "random" ] && [ -z "$accuracy" ] && print_error "The parameter 'accuracy' is required when 'appliedSign' is set to 'random'."
-[ "$appliedSign" == "fixed" ] && [ -z "$assignation" == "sequential" ] && print_error "The combination of the parameters 'assignation' set 'sequential' and 'appliedSign' set to 'fixed' is not allowed."
+#[ "$appliedSign" == "fixed" ] && [ "$assignation" == "sequential" ] && print_error "The combination of the parameters 'assignation' set 'sequential' and 'appliedSign' set to 'fixed' is not allowed."
 [ ! "$strategy" == "arithmetic" ] && [ ! "$strategy" == "geometric" ] && print_error "The parameter 'strategy' must be equal to either 'arithmetic' or 'geometric'."
 
 invAccuracy=$((100-accuracy))
@@ -71,8 +73,9 @@ while [ $(echo "$amount>1"|bc) -eq 1 ]; do
   perc=${bets[currBetIndex]}
   [ "$appliedSign" == "fixed" ] && [ "$(echo "$perc>0"|bc)" == "1" ] && choice=$((invAccuracy+1)) || choice=$((invAccuracy-1))
   [ "$appliedSign" == "random" ] && choice=$((RANDOM%100))
-  [ "$assignation" == "sequential" ] && [ $choice -ge $invAccuracy ] && currBetIndex=0 
-  [ "$assignation" == "sequential" ] && [ $choice -lt $invAccuracy ] && sign=-1 && currBetIndex=$(((currBetIndex+1)%${#bets[@]}))
+  [ "$assignation" == "sequential" ] && [ "$appliedSign" != "fixed" ] && [ $choice -ge $invAccuracy ] && currBetIndex=0 
+  [ "$assignation" == "sequential" ] && [ "$appliedSign" != "fixed" ] && [ $choice -lt $invAccuracy ] && sign=-1 && currBetIndex=$(((currBetIndex+1)%${#bets[@]}))
+  [ "$assignation" == "sequential" ] && [ "$appliedSign" == "fixed" ] && currBetIndex=$(((currBetIndex+1)%${#bets[@]}))
   if [ "$strategy" == "geometric" ]; then 
     amount=$(echo "scale=6;$amount+$amount*$perc*$sign" | bc -l)
   elif [ "$strategy" == "arithmetic" ]; then
