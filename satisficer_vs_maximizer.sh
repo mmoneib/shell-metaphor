@@ -18,7 +18,7 @@ count=0
 while true; do
   [ $((count%1)) -eq 0 ] && echo "After $count iterations, Satisficer has $satisficerScore carrots, while Maximizer has $maximizerScore carrots. Difference = $((satisficerScore-maximizerScore))"
   delta=$(($RANDOM%2+1)) # -1 or 1
-  if [ $delta -eq 1 ]; then #TODO Move to functiona and add options other than this independent time series (add dependent, [ercentages...etc.).
+  if [ $delta -eq 1 ]; then #TODO Move to functiona and add options other than this independent time series (add dependent, [percentages...etc.).
     satisficerCache=$((satisficerCache+1))
     maximizerCache=$((maximizerCache+1))
   fi

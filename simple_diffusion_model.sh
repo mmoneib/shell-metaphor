@@ -2,7 +2,7 @@
 #############################################################################################
 # Simple Diffusion Model                                                                    #                
 #                                                                                           #
-# A simple way of modelling diffusion of two inter-mixing populations of elements and       # 
+# A simple way of modeling diffusion of two inter-mixing populations of elements and        # 
 # measuring the degree of mixture as the time passes by through the purity of the mix       #
 # compared to the original population into which the flow is directed.                      #
 #                                                                                           #
@@ -10,6 +10,7 @@
 #############################################################################################
 
 #TODO Add command parameters to specify the variables.
+#TODO Add option of raw output.
 
 originalPopulation=5000000
 flowingPopulation=1000000

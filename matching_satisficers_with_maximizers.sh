@@ -2,8 +2,8 @@
 ################################################################################
 # Matching Saticficers with Maximizers                                         #
 #                                                                              #
-# A simple Monte Carlo simulation to analyze scarcity when matchcmaking a      #
-# group of satisficers with maximizers.                                        #
+# A simple Monte Carlo simulation to analyze scarcity when matchmaking a group #
+# of satisficers with maximizers.                                              #
 #                                                                              #
 # Conceptualized and developed by: Muhammad Moneib                             #
 ################################################################################
