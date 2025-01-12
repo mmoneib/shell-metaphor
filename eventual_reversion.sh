@@ -8,6 +8,8 @@
 #                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
+# TODO Add option parameters.
+# TODO Add option for raw output.
 
 choices=("H" "T")
 numOfChoices=${#choices[@]}

@@ -8,6 +8,7 @@
 #                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
+#TODO Add parsing of parameters.
 #TODO Add a print_verbos function to include output which is not directly part of the result.
 #TODO Add option of raw output.
 #TODO Add input parameters and remove hard-coded variables.

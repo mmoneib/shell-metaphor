@@ -1,4 +1,7 @@
 #!/bin/sh
+#TODO Add description.
+#TODO Add omput parameters.
+#TODO Add raw output.
 
 startingAmount=100
 bets=(1 2 4 8 16 32 64 128)
