@@ -6,21 +6,30 @@
 #                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
+# TODO Refactor into a function to reduce specific condition.
+# TODO Add collage.
 
 function print_usage {
   echo "USAGE: $0  -c filled_char_here [ -l length_of_side_here -e emptiness_char_here -s is_sticky_here -t pause_in_seconds ]"
   exit
 }
 
+function print_error {
+  echo "ERROR: $1">&2
+  isError=true
+  exit
+}
+
 function trap_on_exit {
-  [ -z $isError ] && clear
+  [ -z "$isError" ] && [ -z "$specificFrame" ] && clear
 }
 
 # Arguments parsing.
-while getopts "c:e:i:l:t:w:h" opt; do
+while getopts "c:e:f:i:l:t:w:h" opt; do
   case $opt in
   c) char=$OPTARG ;;
   e) emptinessChar=$OPTARG ;;
+  f) specificFrame=$OPTARG ;;
   l) length=$OPTARG ;;
   t) stopTimeBetweenFrames=$OPTARG ;;
   h) print_usage ;;
@@ -40,33 +49,36 @@ fi
 tput reset # Initializes the screen, to avoid leftovers from previous processes.
 trap trap_on_exit EXIT # CLean after exit.
 # Initialization of internal variables.
-frameSize=$(( width*height ))
-charset="$emptinessChar$char"
 width=$length
 numOfChars=2
+charset="$emptinessChar$char"
 o_canvas="" 
 # Processing
 while [ $length -lt 8 ]; do
-for (( c=0;c<numOfChars**(length*width);c++ )); do # Number of possible frames.
-  o_canvas=""
-  tput cup 0 0 # No flickering like 'tput reset'.
-  for (( l=0;l<length;l++ )); do
-    for (( w=0;w<width;w++ )); do
-      posInCanvas=$(( l*width+w ))
-      posInCharset=$(( (c/(numOfChars**posInCanvas))%numOfChars )) # Rolling frequency decreases geometrically with advanced position in canvas.
+  numOfPossibleFrames=$(( numOfChars**(length*width) ))
+  [ ! -z "$specificFrame" ] && [ $numOfPossibleFrames -le $specificFrame ] && print_error "Maximum number of a frame for this size is $(( numOfPossibleFrames-1 ))."
+  [ -z "$specificFrame" ] && cStart=0 || cStart="$specificFrame"
+  for (( c=$cStart;c<numOfPossibleFrames;c++ )); do # Number of possible frames.
+    o_canvas=""
+    tput cup 0 0 # No flickering like 'tput reset'.
+    for (( l=0;l<length;l++ )); do
+      for (( w=0;w<width;w++ )); do
+        posInCanvas=$(( l*width+w ))
+        posInCharset=$(( (c/(numOfChars**posInCanvas))%numOfChars )) # Rolling frequency decreases geometrically with advanced position in canvas.
 #echo $posInCharset
-      o_canvas+="${charset:$posInCharset:1}"
+        o_canvas+="${charset:$posInCharset:1}"
+      done
+      o_canvas+="\n"
     done
-    o_canvas+="\n"
+    # Output
+    printf "$o_canvas"
+    [ ! -z "$specificFrame" ] && exit
+    sleep $stopTimeBetweenFrames
   done
-  # Output
-  printf "$o_canvas"
-  sleep $stopTimeBetweenFrames
-done
   if [ $isExpansiveUniverse == true ]; then
     (( length++ ))
     (( width++ ))
   else
-    break
+    break # Could also have separated the outer while in a conditional, but the flow is better like this for the ourpose of the script.
   fi
 done
