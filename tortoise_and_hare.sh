@@ -3,7 +3,7 @@
 # Toritoise and Hare                                                                        #                
 #                                                                                           #
 # The fable of The Tortoise and the Hare is a subtle take on the importance of consistency  #
-# in addition to speed. For this Monte Carlo simulation, which is designed to analyze thi   #
+# in addition to speed. For this Stochastic simulation, which is designed to analyze this   #
 # moral under different behaviours, I substtitute the napping of the Hare with a property I #
 # call "jumpiness", which is a measure of the tendency of the Hare to move in the wrong     #
 # direction. The Tortoise has an opposing property, "steadiness", which is a measure of its #
