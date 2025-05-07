@@ -9,13 +9,13 @@
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
 #TODO Add parsing of parameters.
-#TODO Add a print_verbos function to include output which is not directly part of the result.
+#TODO Add a print_verbose function to include output which is not directly part of the result.
 #TODO Add option of raw output.
 #TODO Add input parameters and remove hard-coded variables.
 #TODO Group printing at the end of the script.
 #TODO Add comment to explain the steps.
 #TODO Add comparison of the winner and the popular candidate.
-#TODO Interpret te cycles in the case of an Order of Preference system.
+#TODO Interpret the cycles in the case of an Order of Preference system.
 
 candidates=('A' 'B' 'C')
 availableScoresOfRanks=(3 5 8)
