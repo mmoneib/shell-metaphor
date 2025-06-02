@@ -26,8 +26,10 @@ Optional Parmeters:
 \tLoss Percentages (l): A comma-separated list of the percentage to be lost from the risked amount in case of unsuccessful risk. Defaults to the risk percentage.  
 \tNumber of Iternations (n): Number of times the accumulative amount is put at risk. Defaults to 100.
 Examples:
+# Assymetric gains and losses.
+$0 -i 10000 -n 50 -a '10,20,30,40' -c 'A,B,C,D' -r '90,70,50,10' -n 50 -g '200,100,50,10' -l '50,30,20,10'
 # Simulating odds of bets.
-$0 -i 1000 -a '25,25,25,25' -c 'o1%,o10%,o25%,o50%' -r '99,90,75,50' -g '9900,900,300,100' -l '100,100,100,100'"
+$0 -i 1000 -n 10 -a '20,20,20,20,20' -c 'o1%,o10%,o25%,o50%,o75%' -r '99,90,75,50,25' -g '9900,900,300,100,33.33' -l '100,100,100,100,100'"
   exit
 }
 
@@ -39,7 +41,6 @@ function print_error {
 
 function print_usage {
   echo "USAGE: $0 -a allocations_here -c categories_here -r risks_here -n num_of_iterations_here [ -g gains_here -l losses_here ]"
-  echo "Example: $0 -i 10000 -n 50 -a '10,20,30,40' -c 'A,B,C,D' -r '90,70,50,10' -n 50 -g '200,100,50,10' -l '50,30,20,10"
   exit
 }
 
