@@ -12,6 +12,9 @@ function print_usage {
   exit 1
 }
 
+function calc {
+  printf '%.2f' "$(echo $1|bc -l)"
+}
 # Activation Functions
 function perceptron_activation {
   echo $1
@@ -20,40 +23,33 @@ function sigmoid_activation {
   factor="0.5" # TODO: Determine values.
   echo "scale=3;$1*$factor|bc -l"
 }
-function tanh_activation {
-  param=$1
-  fadingFactor=$(( $param/100000000 ))
-  #echo $param >&2
-  echo $(( $param*(100-$fadingFactor)/100 ))
-#echo $(( 1*$param ))
-}
 function relU_activation {
   inp=$1
-  if [ $inp -le 0 ]; then
-    ramp=-1
+  if [ "$(echo "$inp<0"|bc)" -eq 1 ]; then
+    ramp="-0.1"
     inp=1
   else
-    ramp=$(( $inp/10 +1 ))
+    ramp="$(calc "$inp/100+1" )"
   fi
-  echo $(( $ramp*$inp ))
+  echo "$(calc "$ramp*$inp" )"
 }
 # Loss Functions
 function deviation_loss {
   got="$1"
   expected="$2"
-  dev=$(( $got-$expected ))
-  [ $dev -lt 0 ] && dev=$(( -1*$dev ))
+  dev="$(calc "$got-$expected")"
+  [ "$(echo "$dev<0"|bc)" -eq 1 ] && dev="$(calc "-1*$dev" )"
   #echo "DEV: $dev" >&2
   echo $dev
 }
-fibChoices=( 1 2 3 5 8 13 21 34 55 89 144 )
+fibChoices=( "0.1" "0.2" "0.3" "0.5" "0.8" "0.13" "0.21" "0.34" "0.55" )
 # Weight Adjustment Functions
 function fibRandomWalk_weight_adjust {
   weight=$1
   choice=${fibChoices[$(( RANDOM%${#fibChoices[@]} ))]}
   newWeight=0
-  while [ $newWeight -eq 0 ]; do
-    [ 0 -eq $(( RANDOM%2 )) ] && newWeight=$(( $weight-$choice )) || newWeight=$(( $weight+$choice ))
+  while [ $(echo "$newWeight==0"|bc) -eq 1 ]; do
+    [ 0 -eq $(( RANDOM%2 )) ] && newWeight="$(calc "$weight-$choice" )" || newWeight="$(calc "$weight+$choice" )"
   done
   echo "$newWeight"
 }
@@ -63,37 +59,33 @@ function randomJump_weight_adjust {
   choice=$(( RANDOM%$maxJump ))
   newWeight=0
   while [ $newWeight -eq 0 ]; do
-    [ 0 -eq $(( RANDOM%2 )) ] && newWeight=$(( $weight-$choice )) || newWeight=$(( $weight+$choice ))
+    [ 0 -eq $(( RANDOM%2 )) ] && newWeight="$(calc "$weight-$choice" )" || newWeight="$(calc "$weight+$choice" )"
   done
   echo "$newWeight"
 }
-range=2000
 function randomGuess_weight_adjust {
-  echo "$(( RANDOM%2000-1000 ))"
+  echo "$(calc "$(( RANDOM%200-100 ))/100")"
 }
 # Thinking Funciton
 function think {
   inp=$1
   inp=$(( 10#$inp )) # To force base 10 in case of leading 0.
-  node1Out=$($activeFunc $(( $inp*$node1W + 1 )) )
-  node21Out=$($activeFunc $(( $node1Out*$node21W + 2 )) )
-  node22Out=$($activeFunc $(( $node1Out*$node22W + 3 )) )
-  node23Out=$($activeFunc $(( $node1Out*$node23W - 6 )) )
-  node24Out=$($activeFunc $(( $node1Out*$node24W -8 )) )
-  node25Out=$($activeFunc $(( $node1Out*$node25W + 1 )) )
-  node26Out=$($activeFunc $(( $node1Out*$node26W + 7 )) )
-  node31Out=$($activeFunc $(( $node31W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) +4 )) )
-  node32Out=$($activeFunc $(( $node32W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) + 5 )) )
-  node33Out=$($activeFunc $(( $node33W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) - 7 )) )
-  thinkOutput=$($activeFunc $(( $node4W*($node31Out+$node32Out+$node33Out) + 6 )) )
+  node1Out="$($activeFunc "$(calc "$inp*$node1W+1" )" )"
+  node21Out="$($activeFunc "$(calc "$node1Out*$node21W + 2" )" )"
+  node22Out="$($activeFunc "$(calc "$node1Out*$node22W + 3" )" )"
+  node23Out="$($activeFunc "$(calc "$node1Out*$node23W - 6" )" )"
+  node31Out="$($activeFunc "$(calc "$node31W*($node21Out+$node22Out+$node23Out) +4" )" )"
+  node32Out="$($activeFunc "$(calc "$node32W*($node21Out+$node22Out+$node23Out) + 5" )" )"
+  node33Out="$($activeFunc "$(calc "$node33W*($node21Out+$node22Out+$node23Out) - 7" )" )"
+  thinkOutput="$($activeFunc "$(calc "$node4W*($node31Out+$node32Out+$node33Out) + 6" )" )"
   echo $thinkOutput
 }
 
 input=
 goodExamples=()
-goodOutcome=1000
+goodOutcome=999999999
 badExamples=()
-badOutcome=-1000
+badOutcome=888888888
 trainFilesDir="$HOME" # To maintain consistent training across discreet runs. Otherwise, only continuous training would be useful.
 # Choose
 while getopts "a:i:j:l:p:t:w:h" o; do
@@ -114,19 +106,16 @@ trainBatchNum="$(echo $trainBatchNumSize|cut -d '*' -f 1)"
 trainBatchSize="$(echo $trainBatchNumSize|cut -d '*' -f 2)"
 [ -z "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)"
 [ -z "$weightsStr" ] && weightsStr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
-[ "${#weightsArr[@]}" != "11" ] && echo "ERROR: Number of weights must be 11." && print_usage
+[ "${#weightsArr[@]}" != "8" ] && echo "ERROR: Number of weights must be 7." && print_usage
 # Read
 node1W=${weightsArr[0]}
 node21W=${weightsArr[1]}
 node22W=${weightsArr[2]}
 node23W=${weightsArr[3]}
-node24W=${weightsArr[4]}
-node25W=${weightsArr[5]}
-node26W=${weightsArr[6]}
-node31W=${weightsArr[7]}
-node32W=${weightsArr[8]}
-node33W=${weightsArr[9]}
-node4W=${weightsArr[10]}
+node31W=${weightsArr[4]}
+node32W=${weightsArr[5]}
+node33W=${weightsArr[6]}
+node4W=${weightsArr[7]}
 # Train
 if [ ! -z "$trainBatchNumSize" ]; then
   echo "BEGIN OF TRAINING"
@@ -187,9 +176,6 @@ if [ ! -z "$trainBatchNumSize" ]; then
   oldNode21W=0
   oldNode22W=0
   oldNode23W=0
-  oldNode24W=0
-  oldNode25W=0
-  oldNode26W=0
   oldNode31W=0
   oldNode32W=0
   oldNode33W=0
@@ -207,8 +193,8 @@ if [ ! -z "$trainBatchNumSize" ]; then
       example=${goodExamples[$index]}
       #echo "Good: $example"
       thought=$(think $example)
-#      echo "Think: $thought Example: $example"
-      accLoss=$(( $accLoss+$($lossFunc $thought $goodOutcome) ))
+ #     echo "Think: $thought Example: $example"
+      accLoss="$(calc "$accLoss+$($lossFunc $thought $goodOutcome)" )"
 ##      echo "Loss: $accLoss"
 #  [ $accLoss -lt 0 ] && accLoss=999999999999999999999999999999999999
       (( trainedCount++ ))
@@ -218,20 +204,17 @@ if [ ! -z "$trainBatchNumSize" ]; then
       example=${badExamples[$index]}
       thought=$(think $example)
 #      echo "Think: $thought Example: $example"
-      accLoss=$(( $accLoss+$($lossFunc $thought $badOutcome) ))
+      accLoss="$(calc "$accLoss+$($lossFunc $thought $badOutcome)" )"
 ##      echo "Loss: $accLoss"
-  [ $accLoss -lt 0 ] && accLoss=999999999999999999
+      [ $(echo "$accLoss<0"|bc) -eq 1 ] && accLoss=999999999999999999
       (( trainedCount++ ))
 #[ $accLoss -eq 24975000 ] && exit
     done
-    if [ $accLoss -ge $oldAccLoss ]; then
+    if [ $(echo "$accLoss>=$oldAccLoss"|bc) -eq 1 ]; then
       node1W="$oldNode1W"
       node21W="$oldNode21W"
       node22W="$oldNode22W"
       node23W="$oldNode23W"
-      node24W="$oldNode24W"
-      node25W="$oldNode25W"
-      node26W="$oldNode26W"
       node31W="$oldNode31W"
       node32W="$oldNode32W"
       node33W="$oldNode33W"
@@ -242,14 +225,11 @@ if [ ! -z "$trainBatchNumSize" ]; then
       echo "Acc Loss: $accLoss"
     fi
     ## Adjust Weights
-    echo "Old Weights: $node1W $node21W $node22W $node23W $node24W $node25W $node26W $node31W $node32W $node33W $node4W"
+    echo "Old Weights: $node1W $node21W $node22W $node23W $node31W $node32W $node33W $node4W"
     oldNode1W=$node1W
     oldNode21W=$node21W
     oldNode22W=$node22W
     oldNode23W=$node23W
-    oldNode24W=$node24W
-    oldNode25W=$node25W
-    oldNode26W=$node26W
     oldNode31W=$node31W
     oldNode32W=$node32W
     oldNode33W=$node33W
@@ -258,14 +238,11 @@ if [ ! -z "$trainBatchNumSize" ]; then
     node21W="$($wAdjustFunc $node21W)"
     node22W="$($wAdjustFunc $node22W)"
     node23W="$($wAdjustFunc $node23W)"
-    node24W="$($wAdjustFunc $node24W)"
-    node25W="$($wAdjustFunc $node25W)"
-    node26W="$($wAdjustFunc $node26W)"
     node31W="$($wAdjustFunc $node31W)"
     node32W="$($wAdjustFunc $node32W)"
     node33W="$($wAdjustFunc $node33W)"
     node4W="$($wAdjustFunc $node4W)"
-    echo "New Weights: $node1W $node21W $node22W $node23W $node24W $node25W $node26W $node31W $node32W $node33W $node4W"
+    echo "New Weights: $node1W $node21W $node22W $node23W $node31W $node32W $node33W $node4W"
     (( batchCount++ ))
   done
   echo "END OF TRAINING"
