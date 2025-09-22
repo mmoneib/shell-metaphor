@@ -67,25 +67,40 @@ function randomJump_weight_adjust {
   done
   echo "$newWeight"
 }
-range=2000
+#range=2000
 function randomGuess_weight_adjust {
-  echo "$(( RANDOM%2000-1000 ))"
+  guess=0
+  while [ $guess -eq 0 ]; do
+    guess="$(( RANDOM%200-100 ))"
+  done
+  echo $guess
 }
 # Thinking Funciton
 function think {
+  layerOutputs=()
   inp=$1
   inp=$(( 10#$inp )) # To force base 10 in case of leading 0.
-  node1Out=$($activeFunc $(( $inp*$node1W + 1 )) )
-  node21Out=$($activeFunc $(( $node1Out*$node21W + 2 )) )
-  node22Out=$($activeFunc $(( $node1Out*$node22W + 3 )) )
-  node23Out=$($activeFunc $(( $node1Out*$node23W - 6 )) )
-  node24Out=$($activeFunc $(( $node1Out*$node24W -8 )) )
-  node25Out=$($activeFunc $(( $node1Out*$node25W + 1 )) )
-  node26Out=$($activeFunc $(( $node1Out*$node26W + 7 )) )
-  node31Out=$($activeFunc $(( $node31W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) +4 )) )
-  node32Out=$($activeFunc $(( $node32W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) + 5 )) )
-  node33Out=$($activeFunc $(( $node33W*($node21Out+$node22Out+$node23Out+$node24Out+$node25Out+$node26Out) - 7 )) )
-  thinkOutput=$($activeFunc $(( $node4W*($node31Out+$node32Out+$node33Out) + 6 )) )
+  nodeCount=0
+  for (( i=0;i<${#structureArr[@]};i++ )); do
+    count=0
+    while [ $count -lt ${structureArr[$i]} ]; do
+      (( nodeCount++ ))
+      [ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
+      if [ $i -eq 0 ]; then
+        nodeInput=$inp
+      else
+        nodeInput=${layerOutputs[$(( $i-1 ))]}
+      fi
+      nodeWeight=${weightsArr[$(( $nodeCount-1 ))]}
+      #echo "DEBUG: NodeWeight = $nodeWeight" >&2
+      nodeOutput=$($activeFunc $(( $nodeInput*$nodeWeight )) )
+      [ -z "${layerOutputs[$i]}" ] && layerOuputs[$i]=0 # Initialization
+      layerOutputs[$i]=$(( layerOutputs[$i]+$nodeOutput ))
+      (( count++ ))
+    done
+  done
+  #echo "DEBUG: LayerOuputs = ${layerOutputs[@]}" >&2
+  thinkOutput=${layerOutputs[$(( ${#layerOutputs[@]}-1 ))]}
   echo $thinkOutput
 }
 
@@ -94,7 +109,9 @@ goodExamples=()
 goodOutcome=1000
 badExamples=()
 badOutcome=-1000
+odlWeightsArr=()
 trainFilesDir="$HOME" # To maintain consistent training across discreet runs. Otherwise, only continuous training would be useful.
+structureStr="1,50,50,1"
 # Choose
 while getopts "a:i:j:l:p:t:w:h" o; do
   case $o in
@@ -112,21 +129,14 @@ done
 [ -z "$input" ] && print_usage
 trainBatchNum="$(echo $trainBatchNumSize|cut -d '*' -f 1)"
 trainBatchSize="$(echo $trainBatchNumSize|cut -d '*' -f 2)"
+[ -z "$structureStr" ] && structureArr=(1 1) || IFS=,; read -a structureArr <<< "$structureStr"
+numOfNodes=0
+for (( i=0;i<${#structureArr[@]};i++ )); do
+  numOfNodes=$(( $numOfNodes+${structureArr[$i]} ))
+done
 [ -z "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)"
-[ -z "$weightsStr" ] && weightsStr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
-[ "${#weightsArr[@]}" != "11" ] && echo "ERROR: Number of weights must be 11." && print_usage
-# Read
-node1W=${weightsArr[0]}
-node21W=${weightsArr[1]}
-node22W=${weightsArr[2]}
-node23W=${weightsArr[3]}
-node24W=${weightsArr[4]}
-node25W=${weightsArr[5]}
-node26W=${weightsArr[6]}
-node31W=${weightsArr[7]}
-node32W=${weightsArr[8]}
-node33W=${weightsArr[9]}
-node4W=${weightsArr[10]}
+[ -z "$weightsStr" ] && weightsArr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
+[ "${#weightsArr[@]}" -ne "$numOfNodes" ] && echo "ERROR: Number of weights must be $numOfNodes." && print_usage
 # Train
 if [ ! -z "$trainBatchNumSize" ]; then
   echo "BEGIN OF TRAINING"
@@ -183,17 +193,9 @@ if [ ! -z "$trainBatchNumSize" ]; then
   # Initialization
   batchCount=0
   oldAccLoss=999999999999999999
-  oldNode1W=0
-  oldNode21W=0
-  oldNode22W=0
-  oldNode23W=0
-  oldNode24W=0
-  oldNode25W=0
-  oldNode26W=0
-  oldNode31W=0
-  oldNode32W=0
-  oldNode33W=0
-  oldNode4W=0
+  for (( i=0;i<${#weightsArr[@]};i++ )); do
+    oldWeightsArr[$i]=0
+  done
   while [ $batchCount -lt $trainBatchNum ]; do
       echo "Training Batch $batchCount, of $trainBatchSize items..."
     ## Train on Examples
@@ -207,7 +209,7 @@ if [ ! -z "$trainBatchNumSize" ]; then
       example=${goodExamples[$index]}
       #echo "Good: $example"
       thought=$(think $example)
-#      echo "Think: $thought Example: $example"
+      #echo "Think: $thought Example: $example"
       accLoss=$(( $accLoss+$($lossFunc $thought $goodOutcome) ))
 ##      echo "Loss: $accLoss"
 #  [ $accLoss -lt 0 ] && accLoss=999999999999999999999999999999999999
@@ -217,7 +219,7 @@ if [ ! -z "$trainBatchNumSize" ]; then
       #index=$(( ($batchCount*$trainBatchSize+$trainedCount)%${#badExamples[@]} ))
       example=${badExamples[$index]}
       thought=$(think $example)
-#      echo "Think: $thought Example: $example"
+      #echo "Think: $thought Example: $example"
       accLoss=$(( $accLoss+$($lossFunc $thought $badOutcome) ))
 ##      echo "Loss: $accLoss"
   [ $accLoss -lt 0 ] && accLoss=999999999999999999
@@ -225,48 +227,24 @@ if [ ! -z "$trainBatchNumSize" ]; then
 #[ $accLoss -eq 24975000 ] && exit
     done
     if [ $accLoss -ge $oldAccLoss ]; then
-      node1W="$oldNode1W"
-      node21W="$oldNode21W"
-      node22W="$oldNode22W"
-      node23W="$oldNode23W"
-      node24W="$oldNode24W"
-      node25W="$oldNode25W"
-      node26W="$oldNode26W"
-      node31W="$oldNode31W"
-      node32W="$oldNode32W"
-      node33W="$oldNode33W"
-      node4W="$oldNode4W"
+      for (( i=0;i<${#weightsArr[@]};i++ )); do
+        weightsArr[$i]=${oldWeightsArr[$i]}
+      done
       echo "Reverted to old weights due to lack of progress in reducing loss. $accLoss >= $oldAccLoss"
     else
       oldAccLoss=$accLoss
       echo "Acc Loss: $accLoss"
     fi
     ## Adjust Weights
-    echo "Old Weights: $node1W $node21W $node22W $node23W $node24W $node25W $node26W $node31W $node32W $node33W $node4W"
-    oldNode1W=$node1W
-    oldNode21W=$node21W
-    oldNode22W=$node22W
-    oldNode23W=$node23W
-    oldNode24W=$node24W
-    oldNode25W=$node25W
-    oldNode26W=$node26W
-    oldNode31W=$node31W
-    oldNode32W=$node32W
-    oldNode33W=$node33W
-    oldNode4W=$node4W
-    node1W="$($wAdjustFunc $node1W)"
-    node21W="$($wAdjustFunc $node21W)"
-    node22W="$($wAdjustFunc $node22W)"
-    node23W="$($wAdjustFunc $node23W)"
-    node24W="$($wAdjustFunc $node24W)"
-    node25W="$($wAdjustFunc $node25W)"
-    node26W="$($wAdjustFunc $node26W)"
-    node31W="$($wAdjustFunc $node31W)"
-    node32W="$($wAdjustFunc $node32W)"
-    node33W="$($wAdjustFunc $node33W)"
-    node4W="$($wAdjustFunc $node4W)"
-    echo "New Weights: $node1W $node21W $node22W $node23W $node24W $node25W $node26W $node31W $node32W $node33W $node4W"
-    (( batchCount++ ))
+    printf "Old Weights: " && printf '%s,' "${oldWeightsArr[@]}" && echo 
+    for (( i=0;i<${#weightsArr[@]};i++ )); do
+      oldWeightsArr[$i]=${weightsArr[$i]}
+    done
+    for (( i=0;i<${#weightsArr[@]};i++ )); do
+      weightsArr[$i]="$($wAdjustFunc ${weightsArr[$i]})"
+    done
+    printf "New Weights: " && printf '%s,' "${weightsArr[@]}" && echo 
+   (( batchCount++ ))
   done
   echo "END OF TRAINING"
 fi
