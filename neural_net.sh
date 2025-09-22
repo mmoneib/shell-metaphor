@@ -92,34 +92,37 @@ function randomJump_weight_adjust {
 }
 # Thinking Funciton
 function think {
-  layerOutputs=()
   inp=$1
   inp=$(( 10#$inp )) # To force base 10 in case of leading 0.
   nodeCount=0
-  for (( i=0;i<${#structureArr[@]};i++ )); do
-    count=0
-    while [ $count -lt ${structureArr[$i]} ]; do
-      (( nodeCount++ ))
-      #[ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
-      bias=$(( $nodeCount+1 )) # Positive bias acts against the improbable case of having all negative weight that would produce a 0.
-      if [ $i -eq 0 ]; then
-        nodeInput=$inp
+  weightCount=0
+  for (( layerCount=0;layerCount<${#structureArr[@]};layerCount++ )); do
+    nodeInLayerCount=0
+    while [ $nodeInLayerCount -lt ${structureArr[$layerCount]} ]; do
+      # No weight or biases for entry nodes.
+      if [ $layerCount -eq 0 ]; then
+        nodeInputs=$inp
+        nodeValue=$(( $nodeInputs )) # TODO support multiple inputs.
       else
-        nodeInput=${layerOutputs[$(( $i-1 ))]}
+        nodeValue=0
+        for (( nodeIndex=$previousLayerStartNodeIndex;nodeIndex<$previousLayerEndNodeIndex;nodeIndex++ )); do
+          linkWeight=${weightsArr[$weightCount]}
+          nodeValue=$(( $nodeValue+${nodeValues[$nodeIndex]}*$linkWeight )) # Sum of weights.
+          (( weightCount++ ))
+        done
+      #[ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
+        bias=$(( $nodeCount+1 )) # Positive bias acts against the improbable case of having all negative weight that would produce a 0.
+        nodeValue=$(( $nodeValue+$bias ))
       fi
-      nodeWeight=${weightsArr[$(( $nodeCount-1 ))]}
-#echo $nodeWeight >&2
-#     echo "DEBUG: NodeWeight = $nodeWeight" >&2
-      nodeOutput=$($activeFunc $(( $nodeInput*$nodeWeight+$bias )) ) # Reduce probability of a layer from becoming 0.
-#     echo "DEBUG: NodeOutput = $nodeOutput" >&2
-     [ -z "${layerOutputs[$i]}" ] && layerOuputs[$i]=0 # Initialization
-      layerOutputs[$i]=$(( layerOutputs[$i]+$nodeOutput ))
-      (( count++ ))
+      #echo "DEBUG: Layer $layerCount Node $nodeInLayerCount Value = $nodeValue" >&2
+      nodeValues[$nodeCount]=$nodeValue
+      (( nodeCount++ ))
+      (( nodeInLayerCount++ ))
     done
+    previousLayerEndNodeIndex=$(( $nodeCount ))
+    previousLayerStartNodeIndex=$(( $previousLayerEndNodeIndex-${structureArr[$layerCount]} ))
   done
-#  echo "DEBUG: LayerOuputs = ${layerOutputs[@]}" >&2
-  thinkOutput=${layerOutputs[$(( ${#layerOutputs[@]}-1 ))]}
-  echo $thinkOutput
+  echo $nodeValue #TODO Support multiple outputs.
 }
 
 input=
@@ -149,13 +152,13 @@ done
 trainBatchNum="$(echo $trainBatchNumSize|cut -d '*' -f 1)"
 trainBatchSize="$(echo $trainBatchNumSize|cut -d '*' -f 2)"
 [ -z "$structureStr" ] && structureArr=(1 1) || IFS=,; read -a structureArr <<< "$structureStr"
-numOfNodes=0
-for (( i=0;i<${#structureArr[@]};i++ )); do
-  numOfNodes=$(( $numOfNodes+${structureArr[$i]} ))
+expectNumOfWeights=0
+for (( i=1;i<${#structureArr[@]};i++ )); do
+  expectNumOfWeights=$(( $expectNumOfWeights+${structureArr[$i]}*${structureArr[$(( $i-1 ))]} ))
 done
 [ -z "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)"
 [ -z "$weightsStr" ] && weightsArr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
-[ $numOfNodes -gt 0 ] && [ "${#weightsArr[@]}" -ne "$numOfNodes" ] && echo "ERROR: Number of weights must be $numOfNodes (number of nodes in the specified structure)." && print_usage
+[ "${#weightsArr[@]}" -ne "$expectNumOfWeights" ] && echo "ERROR: Number of weights must be $expectNumOfWeights (provided ${#weightsArr[@]})." && print_usage
 # Train
 if [ ! -z "$trainBatchNumSize" ]; then
   echo "BEGIN OF TRAINING"
