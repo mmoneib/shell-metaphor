@@ -4,12 +4,13 @@
 # Maintaining batch of training is not so useful if random picking is to be employed. But maybe it speeds up things.
 # Resuming training will not yield the same last accLoss because it will start at a different place in the training set.
 # TODO Maintain full state of training procedure including positions. 
+# TODO Why resuming with the sane weights doesn't converge quickly to the last pruced loss with the same weights."
 
 function print_usage {
-  echo "USAGE: $0 -i input_here [-a active_function_name_here -j weight_adjust_function_name_here -l loss_function_name_here -p training_files_path_here -t train_batches_number_by_size_here -w weights_csv_here]"
+  echo "USAGE: $0 -i input_here [-a active_function_name_here -j weight_adjust_function_name_here -l loss_function_name_here -p training_files_path_here -s structure_layers_csv -t train_batches_number_by_size_here -w weights_csv_here]"
   echo "Examples:"
-  echo -e "\t$0 -i 22222 -a perceptron -j randomJump -l deviation -p '$HOME' -t 100*100 -w 1,1,1,1,1,1,1"
-  echo -e "\t$0 -i 22222 -a tanh -j fibRandomWalk -l deviation -t 1000*25 -w  "1,-240,-55,240,-149,-136,-275,-226,52,-1,100,16,165,203,-314,159,36,-129,163,161,-97,218,-23,-23,-130,-65,9,-105,284,-86,111,-168,86,141,94,6,-46,15,-155,-20,-214,-25,83,-95,272,-78,56,-45,17,134,75,94,17,-78,166,74,102,109,-134,14,169,8,-79,7,20,-34,-100,161,40,-200,28,45,114,85,119,-18,65,-67,185,-121,-207,111,19,165,-5,129,-166,32,130,-60,-30,-106,-154,11,-49,-74,-102,-64,-105,-68,-51,-98,"  
+  printf "\t%s\n" "$0 -i 22222 -a perceptron -j randomJump -l deviation -p '$HOME' -s 1,3,2,1 -t '100*100' -w 1,1,1,1,1,1,1"
+  printf "\t%s\n" "$0 -i 22222 -a tanh -j fibRandomWalk -l deviation  -s 1,50,50,1 -t '1000*25' -w 1,-240,-55,240,-149,-136,-275,-226,52,-1,100,16,165,203,-314,159,36,-129,163,161,-97,218,-23,-23,-130,-65,9,-105,284,-86,111,-168,86,141,94,6,-46,15,-155,-20,-214,-25,83,-95,272,-78,56,-45,17,134,75,94,17,-78,166,74,102,109,-134,14,169,8,-79,7,20,-34,-100,161,40,-200,28,45,114,85,119,-18,65,-67,185,-121,-207,111,19,165,-5,129,-166,32,130,-60,-30,-106,-154,11,-49,-74,-102,-64,-105,-68,-51,-98,"  
 exit 1
 }
 
@@ -47,21 +48,24 @@ function deviation_loss {
   #echo "DEV: $dev" >&2
   echo $dev
 }
-fibChoices=( 1 2 3 5 8 13 21 34 55 89 144 )
 # Weight Adjustment Functions
+function applyWeightAdjust { # Allows decoration of the specified functions.
+  weight=$($wAdjustFunc $1)
+  #[ $weight -eq 0 ] && weight=${oldWeightsArr[$(( $nodeCount-1 ))]} # Not recommended. Better use regularization.
+  #[ -z $weight ] && weight=1 # In case no training is done (direct evaluation).
+  [ $weight -eq 0 ] && weight=$(( RANDOM%2 )) && [ $weight -eq 0 ] && weight=-1 # TODO Choose strategy. 
+  echo $weight
+}
+buzzBoundary=2
+function buzz_weight_adjust {
+  weight=$1
+  delta=$(( RANDOM%$buzzBoundary ))
+  [ $(( RANDOM%2 )) -eq 0 ] && echo $(( $weight+$delta )) || echo $(( $weight-$delta )) 
+}
+fibChoices=( 1 2 3 5 8 13 21 34 55 89 144 )
 function fibRandomWalk_weight_adjust {
   weight=$1
   choice=${fibChoices[$(( RANDOM%${#fibChoices[@]} ))]}
-  newWeight=0
-  while [ $newWeight -eq 0 ]; do
-    [ 0 -eq $(( RANDOM%2 )) ] && newWeight=$(( $weight-$choice )) || newWeight=$(( $weight+$choice ))
-  done
-  echo "$newWeight"
-}
-maxJump=1000
-function randomJump_weight_adjust {
-  weight=$1
-  choice=$(( RANDOM%$maxJump ))
   newWeight=0
   while [ $newWeight -eq 0 ]; do
     [ 0 -eq $(( RANDOM%2 )) ] && newWeight=$(( $weight-$choice )) || newWeight=$(( $weight+$choice ))
@@ -76,6 +80,16 @@ function randomGuess_weight_adjust {
   done
   echo $guess
 }
+#maxJump=1000
+function randomJump_weight_adjust {
+  weight=$1
+  choice=$(( RANDOM%$maxJump ))
+  newWeight=0
+  while [ $newWeight -eq 0 ]; do
+    [ 0 -eq $(( RANDOM%2 )) ] && newWeight=$(( $weight-$choice )) || newWeight=$(( $weight+$choice ))
+  done
+  echo "$newWeight"
+}
 # Thinking Funciton
 function think {
   layerOutputs=()
@@ -86,41 +100,45 @@ function think {
     count=0
     while [ $count -lt ${structureArr[$i]} ]; do
       (( nodeCount++ ))
-      [ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
+      #[ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
+      bias=$(( $nodeCount+1 )) # Positive bias acts against the improbable case of having all negative weight that would produce a 0.
       if [ $i -eq 0 ]; then
         nodeInput=$inp
       else
         nodeInput=${layerOutputs[$(( $i-1 ))]}
       fi
       nodeWeight=${weightsArr[$(( $nodeCount-1 ))]}
-      #echo "DEBUG: NodeWeight = $nodeWeight" >&2
-      nodeOutput=$($activeFunc $(( $nodeInput*$nodeWeight )) )
-      [ -z "${layerOutputs[$i]}" ] && layerOuputs[$i]=0 # Initialization
+#echo $nodeWeight >&2
+#     echo "DEBUG: NodeWeight = $nodeWeight" >&2
+      nodeOutput=$($activeFunc $(( $nodeInput*$nodeWeight+$bias )) ) # Reduce probability of a layer from becoming 0.
+#     echo "DEBUG: NodeOutput = $nodeOutput" >&2
+     [ -z "${layerOutputs[$i]}" ] && layerOuputs[$i]=0 # Initialization
       layerOutputs[$i]=$(( layerOutputs[$i]+$nodeOutput ))
       (( count++ ))
     done
   done
-  #echo "DEBUG: LayerOuputs = ${layerOutputs[@]}" >&2
+#  echo "DEBUG: LayerOuputs = ${layerOutputs[@]}" >&2
   thinkOutput=${layerOutputs[$(( ${#layerOutputs[@]}-1 ))]}
   echo $thinkOutput
 }
 
 input=
 goodExamples=()
-goodOutcome=1000
+goodOutcome=1000000
 badExamples=()
-badOutcome=-1000
+badOutcome=-1000000
 odlWeightsArr=()
 trainFilesDir="$HOME" # To maintain consistent training across discreet runs. Otherwise, only continuous training would be useful.
-structureStr="1,50,50,1"
+#structureStr="1,50,50,1"
 # Choose
-while getopts "a:i:j:l:p:t:w:h" o; do
+while getopts "a:i:j:l:p:s:t:w:h" o; do
   case $o in
   a) activeFunc="$OPTARG""_activation" ;;
   i) input="$OPTARG" ;;
   j) wAdjustFunc="$OPTARG""_weight_adjust" ;;
   l) lossFunc="$OPTARG""_loss" ;;
   p) trainFilesDir="$OPTARG" ;;
+  s) structureStr="$OPTARG" ;;
   t) trainBatchNumSize="$OPTARG" ;;
   w) weightsStr="$OPTARG" ;;
   h) print_usage ;;
@@ -137,7 +155,7 @@ for (( i=0;i<${#structureArr[@]};i++ )); do
 done
 [ -z "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)"
 [ -z "$weightsStr" ] && weightsArr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
-[ "${#weightsArr[@]}" -ne "$numOfNodes" ] && echo "ERROR: Number of weights must be $numOfNodes." && print_usage
+[ $numOfNodes -gt 0 ] && [ "${#weightsArr[@]}" -ne "$numOfNodes" ] && echo "ERROR: Number of weights must be $numOfNodes (number of nodes in the specified structure)." && print_usage
 # Train
 if [ ! -z "$trainBatchNumSize" ]; then
   echo "BEGIN OF TRAINING"
@@ -242,12 +260,13 @@ if [ ! -z "$trainBatchNumSize" ]; then
       oldWeightsArr[$i]=${weightsArr[$i]}
     done
     for (( i=0;i<${#weightsArr[@]};i++ )); do
-      weightsArr[$i]="$($wAdjustFunc ${weightsArr[$i]})"
+      weightsArr[$i]="$(applyWeightAdjust ${weightsArr[$i]})"
     done
     printf "New Weights: " && printf '%s,' "${weightsArr[@]}" && echo 
    (( batchCount++ ))
   done
   echo "END OF TRAINING"
+  weightsArr=(${oldWeightsArr[@]})
 fi
 # Think
 echo "$(think $input)"
