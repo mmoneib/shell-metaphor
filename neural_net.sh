@@ -9,7 +9,8 @@ function print_usage {
   echo "USAGE: $0 -i input_here [-a active_function_name_here -j weight_adjust_function_name_here -l loss_function_name_here -p training_files_path_here -t train_batches_number_by_size_here -w weights_csv_here]"
   echo "Examples:"
   echo -e "\t$0 -i 22222 -a perceptron -j randomJump -l deviation -p '$HOME' -t 100*100 -w 1,1,1,1,1,1,1"
-  exit 1
+  echo -e "\t$0 -i 22222 -a tanh -j fibRandomWalk -l deviation -t 1000*25 -w  "1,-240,-55,240,-149,-136,-275,-226,52,-1,100,16,165,203,-314,159,36,-129,163,161,-97,218,-23,-23,-130,-65,9,-105,284,-86,111,-168,86,141,94,6,-46,15,-155,-20,-214,-25,83,-95,272,-78,56,-45,17,134,75,94,17,-78,166,74,102,109,-134,14,169,8,-79,7,20,-34,-100,161,40,-200,28,45,114,85,119,-18,65,-67,185,-121,-207,111,19,165,-5,129,-166,32,130,-60,-30,-106,-154,11,-49,-74,-102,-64,-105,-68,-51,-98,"  
+exit 1
 }
 
 # Activation Functions
