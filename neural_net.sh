@@ -156,8 +156,14 @@ expectNumOfWeights=0
 for (( i=1;i<${#structureArr[@]};i++ )); do
   expectNumOfWeights=$(( $expectNumOfWeights+${structureArr[$i]}*${structureArr[$(( $i-1 ))]} ))
 done
-[ -z "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)"
-[ -z "$weightsStr" ] && weightsArr=(0 0 0 0 0 0) || IFS=,; read -a weightsArr <<< "$weightsStr" 
+[ -f "$weightsStr" ] && weightsStr="$(cat $neural_net_weights)" # TODO Add weights in file.
+[ -z "$weightsStr" ] && weightsArr=() || IFS=,; read -a weightsArr <<< "$weightsStr"
+if [ ${#weightsArr[@]} -eq 0 ]; then
+  echo "Generating random weights..."
+  for (( i=0;i<$expectNumOfWeights;i++ )); do
+     weightsArr[$i]=$(( RANDOM%199-99 ))
+  done
+fi 
 [ "${#weightsArr[@]}" -ne "$expectNumOfWeights" ] && echo "ERROR: Number of weights must be $expectNumOfWeights (provided ${#weightsArr[@]})." && print_usage
 # Train
 if [ ! -z "$trainBatchNumSize" ]; then
