@@ -10,8 +10,8 @@ function print_usage {
   echo "USAGE: $0 -i input_here [-a active_function_name_here -j weight_adjust_function_name_here -l loss_function_name_here -p training_files_path_here -s structure_layers_csv -t train_batches_number_by_size_here -w weights_csv_here]"
   echo "Examples:"
   printf "\t%s\n" "$0 -i 22222 -a perceptron -j randomJump -l deviation -p '$HOME' -s 1,3,2,1 -t '100*100' -w 1,1,1,1,1,1,1"
-  printf "\t%s\n" "$0 -i 22222 -a tanh -j fibRandomWalk -l deviation  -s 1,50,50,1 -t '1000*25' -w 1,-240,-55,240,-149,-136,-275,-226,52,-1,100,16,165,203,-314,159,36,-129,163,161,-97,218,-23,-23,-130,-65,9,-105,284,-86,111,-168,86,141,94,6,-46,15,-155,-20,-214,-25,83,-95,272,-78,56,-45,17,134,75,94,17,-78,166,74,102,109,-134,14,169,8,-79,7,20,-34,-100,161,40,-200,28,45,114,85,119,-18,65,-67,185,-121,-207,111,19,165,-5,129,-166,32,130,-60,-30,-106,-154,11,-49,-74,-102,-64,-105,-68,-51,-98,"  
-exit 1
+  printf "\t%s\n" "./neural_net.sh -i 22222 -a tanh -l deviation -j buzz -s 1,7,3,1 -t "100*50" -w -38,-74,62,25,-42,61,79,-69,93,51,73,-22,-32,-25,-81,12,43,-62,-4,-50,-44,-44,84,55,-2,88,-37,57,-50,82,-55,".
+  exit 1
 }
 
 # Activation Functions
@@ -32,10 +32,11 @@ function tanh_activation {
 function relU_activation {
   inp=$1
   if [ $inp -le 0 ]; then
-    ramp=-1
+    #ramp=$badOutcome
+    ramp=0
     inp=1
   else
-    ramp=$(( $inp/10 +1 ))
+    ramp=$(( $inp/100000000 +1 ))
   fi
   echo $(( $ramp*$inp ))
 }
@@ -112,7 +113,7 @@ function think {
         done
       #[ $(( $nodeCount%2 )) -eq 0 ] && bias=$(( $nodeCount+1 )) || bias=$(( 0-$nodeCount ))
         bias=$(( $nodeCount+1 )) # Positive bias acts against the improbable case of having all negative weight that would produce a 0.
-        nodeValue=$(( $nodeValue+$bias ))
+        nodeValue=$($activeFunc $(( $nodeValue+$bias )) )
       fi
       #echo "DEBUG: Layer $layerCount Node $nodeInLayerCount Value = $nodeValue" >&2
       nodeValues[$nodeCount]=$nodeValue
@@ -128,9 +129,11 @@ function think {
 input=
 goodExamples=()
 goodOutcome=1000000
+#goodOutcome=12345678910
 badExamples=()
 badOutcome=-1000000
-odlWeightsArr=()
+#badOutcome=1234567
+oldWeightsArr=()
 trainFilesDir="$HOME" # To maintain consistent training across discreet runs. Otherwise, only continuous training would be useful.
 #structureStr="1,50,50,1"
 # Choose
@@ -161,7 +164,8 @@ done
 if [ ${#weightsArr[@]} -eq 0 ]; then
   echo "Generating random weights..."
   for (( i=0;i<$expectNumOfWeights;i++ )); do
-     weightsArr[$i]=$(( RANDOM%199-99 ))
+     weightsArr[$i]=$(( RANDOM%201-100 ))
+     #weightsArr[$i]=$(( RANDOM%20-10 ))
   done
 fi 
 [ "${#weightsArr[@]}" -ne "$expectNumOfWeights" ] && echo "ERROR: Number of weights must be $expectNumOfWeights (provided ${#weightsArr[@]})." && print_usage
@@ -254,7 +258,7 @@ if [ ! -z "$trainBatchNumSize" ]; then
       (( trainedCount++ ))
 #[ $accLoss -eq 24975000 ] && exit
     done
-    if [ $accLoss -ge $oldAccLoss ]; then
+    if [ $batchCount -ne 0 ] && [ $accLoss -gt $oldAccLoss ]; then
       for (( i=0;i<${#weightsArr[@]};i++ )); do
         weightsArr[$i]=${oldWeightsArr[$i]}
       done
