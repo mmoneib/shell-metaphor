@@ -10,7 +10,8 @@ function print_usage {
   echo "USAGE: $0 -i input_here [-a active_function_name_here -j weight_adjust_function_name_here -l loss_function_name_here -p training_files_path_here -s structure_layers_csv -t train_batches_number_by_size_here -w weights_csv_here]"
   echo "Examples:"
   printf "\t%s\n" "$0 -i 22222 -a perceptron -j randomJump -l deviation -p '$HOME' -s 1,3,2,1 -t '100*100' -w 1,1,1,1,1,1,1"
-  printf "\t%s\n" "./neural_net.sh -i 22222 -a tanh -l deviation -j buzz -s 1,7,3,1 -t "100*50" -w -38,-74,62,25,-42,61,79,-69,93,51,73,-22,-32,-25,-81,12,43,-62,-4,-50,-44,-44,84,55,-2,88,-37,57,-50,82,-55,".
+  printf "\t%s\n" "$0 -i 222222 -a tanh -l deviation -j buzz -J 6 -s 1,6,1 -t "10000*20" -w -90,9,-82,38,-49,39,-41,65,-29,-89,15,-65"
+  printf "\t%s\n" "$0 -i 222222 -a relU -l deviation -j randomGuess -J 3 -s 1,30,30,1 -t 10000*20"
   exit 1
 }
 
@@ -51,15 +52,16 @@ function deviation_loss {
 }
 # Weight Adjustment Functions
 function applyWeightAdjust { # Allows decoration of the specified functions.
-  weight=$($wAdjustFunc $1)
+   weight=$($wAdjustFunc $1 $wAdjustParam)
   #[ $weight -eq 0 ] && weight=${oldWeightsArr[$(( $nodeCount-1 ))]} # Not recommended. Better use regularization.
   #[ -z $weight ] && weight=1 # In case no training is done (direct evaluation).
   [ $weight -eq 0 ] && weight=$(( RANDOM%2 )) && [ $weight -eq 0 ] && weight=-1 # TODO Choose strategy. 
   echo $weight
 }
-buzzBoundary=2
 function buzz_weight_adjust {
   weight=$1
+  [ -z $2 ] && buzzBoundary=2 || buzzBoundary=$2
+  #echo "Buzzing with radius $buzzBoundary" >&2
   delta=$(( RANDOM%$buzzBoundary ))
   [ $(( RANDOM%2 )) -eq 0 ] && echo $(( $weight+$delta )) || echo $(( $weight-$delta )) 
 }
@@ -137,11 +139,12 @@ oldWeightsArr=()
 trainFilesDir="$HOME" # To maintain consistent training across discreet runs. Otherwise, only continuous training would be useful.
 #structureStr="1,50,50,1"
 # Choose
-while getopts "a:i:j:l:p:s:t:w:h" o; do
+while getopts "a:i:j:J:l:p:s:t:w:h" o; do
   case $o in
   a) activeFunc="$OPTARG""_activation" ;;
   i) input="$OPTARG" ;;
   j) wAdjustFunc="$OPTARG""_weight_adjust" ;;
+  J) wAdjustParam="$OPTARG" ;;
   l) lossFunc="$OPTARG""_loss" ;;
   p) trainFilesDir="$OPTARG" ;;
   s) structureStr="$OPTARG" ;;
@@ -185,7 +188,8 @@ if [ ! -z "$trainBatchNumSize" ]; then
     echo "Generating $goodExampleCount good examples."
     count=0
     while [ $count -lt $goodExampleCount ]; do
-      reps=$(( RANDOM%6 + 1 ))
+      #reps=$(( RANDOM%6 + 1 ))
+      reps=6
       char=$(( RANDOM%10 ))
       example=""
       for (( i=0;i<$reps;i++ )); do
@@ -205,7 +209,8 @@ if [ ! -z "$trainBatchNumSize" ]; then
     echo "Generating $badExampleCount bad examples."
     count=0
     while [ $count -lt $badExampleCount ]; do
-      reps=$(( RANDOM%6 + 1 ))
+      #reps=$(( RANDOM%6 + 1 ))
+      reps=6
       example=""
       chosen=
       for (( i=0;i<$reps;i++ )); do
