@@ -41,6 +41,15 @@ function relU_activation {
   fi
   echo $(( $ramp*$inp ))
 }
+function mirror_activation {
+  inp=$1
+  if [ $inp -le 0 ]; then
+    ramp=$(( -inp/100000000 -1 ))
+  else
+    ramp=$(( $inp/100000000 +1 ))
+  fi
+  echo $(( $ramp*$inp ))
+}
 # Loss Functions
 function deviation_loss {
   got="$1"
@@ -96,7 +105,7 @@ function randomJump_weight_adjust {
 # Thinking Funciton
 function think {
   inp=$1
-  inp=$(( 10#$inp )) # To force base 10 in case of leading 0.
+  inp=$(( 10#$inp )) # To force base 10 in case of leading 0; otherwise, BASH thinks it is octal (value too great for base).
   nodeCount=0
   weightCount=0
   for (( layerCount=0;layerCount<${#structureArr[@]};layerCount++ )); do

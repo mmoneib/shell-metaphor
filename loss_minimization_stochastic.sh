@@ -2,6 +2,7 @@
 #TODO Add documentation
 #TODO Add more strategies to variable adjustment.
 #TODO Add multiplied variables.
+#TODO Script for linear regression absed on input table of independent/dependent pair of variables.
 function __print_usage {
   echo "$0 -c coefficients_list_here -e expected_output_here -n num_of_runs_here"
   echo "Example: $0 -c 2,1,4,7 -e 13 -n 1000"
