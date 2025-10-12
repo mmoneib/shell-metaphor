@@ -45,7 +45,8 @@ for (( count=0; count<$numOfRuns; count++ )); do
   loss=$(( expectedY-res ))
   [ $loss -lt 0 ] && loss=$((  $loss*-1 )) # abs
   if [ $loss -lt $lastLoss ]; then
-    echo "Iteration: $count -- Equation: $eq -- Result: $res -- Loss: $loss"
+    lastMinimizationStr="Iteration: $count -- Equation: $eq -- Result: $res -- Loss: $loss"
+    echo $lastMinimizationStr
   else
     loss=$lastLoss
     for (( i=0; i<$numOfVariables; i++ )); do
@@ -54,3 +55,4 @@ for (( count=0; count<$numOfRuns; count++ )); do
     echo "Iteration: $count -- Skipped..."
   fi
 done
+echo "Last Successful Minimization: $lastMinimizationStr"
