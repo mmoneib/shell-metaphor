@@ -1,7 +1,16 @@
 #!/bin/sh
+################################################################################
+# Stochastic Loss Minimization                                                 #
+#                                                                              #
+# A simple stochastic simulation of iterative minimization of loss for any     #
+# affine function. The function is in the form of c1*a+c2*b+...+c.             #
+#                                                                              #
+# Conceptualized and developed by: Muhammad Moneib                             #
+################################################################################
+
 #TODO Add documentation
 #TODO Add more strategies to variable adjustment.
-#TODO Add multiplied variables.
+#TODO Add multiplied variables (like x*y).
 #TODO Script for linear regression absed on input table of independent/dependent pair of variables.
 function __print_usage {
   echo "$0 -c coefficients_list_here -e expected_output_here -n num_of_runs_here"
@@ -9,12 +18,14 @@ function __print_usage {
   exit
 }
 
+isVerbose=0
 [ -z $1 ] && __print_usage
-while getopts "c:e:n:" o; do
+while getopts "c:e:n:v" o; do
   case $o in
   c) coefficientsList=$OPTARG ;;
   e) expectedY=$OPTARG ;;
   n) numOfRuns=$OPTARG ;;
+  v) isVerbose=1 ;;
   *) __print+usage ;;
   esac
 done
@@ -42,6 +53,7 @@ for (( count=0; count<$numOfRuns; count++ )); do
   eq+="${coefficientsArr[$numOfVariables]}"
   res=$(( $(echo $eq) ))
   lastLoss=$loss
+  [ $loss -eq 0 ] && echo "Optimum solution found. No further loss minimization is possible." && break
   loss=$(( expectedY-res ))
   [ $loss -lt 0 ] && loss=$((  $loss*-1 )) # abs
   if [ $loss -lt $lastLoss ]; then
@@ -52,7 +64,7 @@ for (( count=0; count<$numOfRuns; count++ )); do
     for (( i=0; i<$numOfVariables; i++ )); do
       vars[i]=${lastVars[i]}
     done
-    echo "Iteration: $count -- Skipped..."
+    [ $isVerbose -eq 1 ] && echo "Iteration: $count -- Skipped..."
   fi
 done
 echo "Last Successful Minimization: $lastMinimizationStr"
