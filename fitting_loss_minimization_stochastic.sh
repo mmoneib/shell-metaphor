@@ -11,43 +11,60 @@
 
 # Configuration
 ## Support Functions
+function __print_help {
+  echo "Stochasting Fitting Loss Minimization"
+  echo "Examples:"
+  echo "# Normal Flow"
+  echo "\t$0 -i 1,2,3,4 -o 4,7,10,13 -n 1000"
+  echo "# Configurable Distribution of Random Generation Multipliers (Declining Distribution)"
+  echo "\t$0 -i 1,2,3,4 -o 4,7,10,13 -n 1000 -d 1,1,1,1,1,2,2,2,3"
+  exit
+}
 function __print_usage {
-  echo "$0 -i inputs_list_here -n num_of_runs_here -o outputs_expected_list_here"
-  echo "Example: $0 -i 1,2,3,4 -o 4,7,10,13 -n 1000"
+  echo "Usage: $0 -i inputs_list_here -n num_of_runs_here -o outputs_expected_list_here [ -d distribution_multipliers_list_here ]"
   exit
 }
 ## Fallback
 [ -z $1 ] && __print_usage
 ## Defaults
 isVerbose=0
+maxParamValue=100
+distributionMultipliersArr=( 1 )
 ## Inputs
-while getopts "d:i:n:o:v" o; do
+while getopts "d:i:n:o:vh" o; do
   case $o in
+  d) distributionMultipliersList=$OPTARG ;;
   i) inputsList=$OPTARG ;;
   n) numOfRuns=$OPTARG ;;
   o) outputsList=$OPTARG ;;
   v) isVerbose=1 ;;
-  *) __print+usage ;;
+  h) __print_help ;;
+  *) __print_usage ;;
   esac
 done
 IFS=,; read -a inputsArr <<< "$inputsList"
 IFS=,; read -a outputsArr <<< "$outputsList"
+if [ ! -z "$distributionMultipliersList" ]; then
+  IFS=,; read -a distributionMultipliersArr <<< "$distributionMultipliersList"
+fi
 numOfInputs=${#inputsArr[@]} 
 ## Validation
 [ -z $numOfRuns ] && __print_usage
-[ $numOfInputs -ne ${#outputsArr[@]} ] && echo "ERROR: Number ov inputs must be the same as that of outputs." && exit 1
+[ $numOfInputs -ne ${#outputsArr[@]} ] && echo "ERROR: Number of inputs must be the same as that of outputs." && exit 1
 
 # Processing
 ## Support Functions
+function distribution_multiplier {
+  echo ${distributionMultipliersArr[$(( RANDOM%${#distributionMultipliersArr[@]} ))]}
+}
 function random_parameter { 
   sign=$(( RANDOM%2 ))
   [ $sign -eq 0 ] && sign=-1
-  echo $(( RANDOM%100 * sign )) 
+  echo $(( RANDOM%$(( $maxParamValue*$(distribution_multiplier) )) * sign )) 
 }
 
 ## Defaults
 numOfParams=1
-
 loss=9999999999999999
 params=()
 ## Engine
@@ -58,7 +75,7 @@ for (( count=0; count<$numOfRuns; count++ )); do
   for (( pi=0;pi<$numOfParams;pi++ )); do
     lastParams[pi]=${params[pi]}
     param=$(random_parameter)
-    params[pi]=$param 
+    params[pi]=$param
   done
   interceptor=$(random_parameter)
   ### Equation Build Up
