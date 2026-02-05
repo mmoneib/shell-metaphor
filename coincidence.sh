@@ -7,30 +7,58 @@
 #                                                                                           #
 # Conceptualized and developed by: Muhammad Moneib                                          #
 #############################################################################################
-# TODO Develop the other 2 strategies.
 # TODO Check why problematic on Mac starting from l 4 and w 4. Takes much longer than expected.
+# TODO Add strategies based on chess movements.
+# TODO More than 2 agents?
 
 function print_error {
   echo "ERROR: $1"
   print_usage
 }
 
+function print_help {
+  echo "Stochastic simulation of coincidence occurring between two independent agents."
+  echo "Options:"
+  echo "\tHeight (h): Height of the plane of movement."
+  echo "\tWidth (w): Width of the plane of movement."
+  echo "\tPause Interval (w): Time between each movement, in seconds."
+  echo "\tStrategy of Agent 1 (s): One of the strategy enumerations below."
+  echo "\tStrategy of Agent 2 (S): One of the strategy enumerations below."
+  echo "\tBlocks: Comma-separated list of blocked positions on the plane."
+  echo "Enumerations:"
+  echo "\tStrategy:"
+  echo "\t\trandom_walk: Agent moves in any of the 4 main directions free of boundaries in the plane with respect to his last position."
+  echo "\t\tstationary: Agent doesn't move."
+  echo "\t\tteleportation: Agent moves in any slot in the plane free of boundaries, indepent to his last position."
+  echo "Examples:"
+  echo "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 1"
+  echo "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 0.1 -b 1,2,3,5,7"
+ print_usage
+}
+
 function print_usage {
-  echo "USAGE: $0 -s strategy_of_agent1_here -S strategy_of_agent2_here -p pause_interval_here [-l height_here -w width_here]"
+  echo "USAGE: $0 -s strategy_of_agent1_here -S strategy_of_agent2_here -p pause_interval_here [-l height_here -w width_here -b blocks_list_here -r]"
   exit
 }
 
 # Constants
 strategies=( "random_walk" "stationary" "teleportation" ) # For validation.
+blockChar="█"
+# Defaults
+blocksList=""
 # Arguments parsing
-while getopts "l:p:s:S:w:h" opt; do
+[ -z "$1" ] && print_usage
+while getopts "b:l:p:s:S:w:rh" opt; do
   case "$opt" in
+  b) blocksList=$OPTARG ;;
   l) height=$OPTARG ;;
   p) pauseInterval=$OPTARG ;;
   s) agent1Strategy=$OPTARG ;;
   S) agent2Strategy=$OPTARG ;;
   w) width=$OPTARG ;;
-  h) print_usage
+  r) isRawOutput=true ;;
+  h) print_help ;;
+  *) print_usage ;;
   esac
 done
 # Arguments validation
@@ -51,16 +79,28 @@ deltas=( -1 1 +$width -$width )
 #resize -s $height $width
 spaceSize=$(( width*height ))
 space=() # The canvas as an array makes it easier to print, manipulate, and add while printing.
-agent1Position="$(( RANDOM%spaceSize ))"
-agent2Position="$(( RANDOM%spaceSize ))"
 count=0
 for (( i=0; i<$spaceSize; i++ )); do # Initializing Space
   space+=(".")
 done
+IFS=,; read -a blocksArr <<< "$blocksList"
+for (( i=0;i<${#blocksArr[@]};i++ )); do
+  blockIndex=${blocksArr[$i]}
+  if [ $blockIndex -ge $spaceSize ]; then
+    print_error "Block index $blockIndex does not lie on the plane. Please use an index less than $spaceSize."
+  fi
+  space[$blockIndex]="$blockChar"
+done
+agent1Position=$(( RANDOM%spaceSize ))
+while [ "${space[agent1Position]}" == "$blockChar" ]; do
+  agent1Position=$(( RANDOM%spaceSize ))
+done
+agent2Position=$(( RANDOM%spaceSize ))
+while [ "${space[agent2Position]}" == "$blockChar" ]; do
+  agent2Position=$(( RANDOM%spaceSize ))
+done
 # Processing
 while true; do
-  space[$agent1Position]="."
-  space[$agent2Position]="."
   function teleportation {
     echo "$(( RANDOM%spaceSize ))"
   }
@@ -72,8 +112,20 @@ while true; do
     newAgentPosition=$(( $oldPosition+$delta )) 
     [ $newAgentPosition -ge 0 ] && [ $newAgentPosition -lt $spaceSize ] &&  echo "$newAgentPosition" || echo $oldPosition
   }
-  agent1Position=$($agent1Strategy $agent1Position)
-  agent2Position=$($agent2Strategy $agent2Position)
+  function stationary {
+    oldPosition=$1
+    echo $oldPosition
+  }
+  function teleportation {
+    newAgentPosition=$(( RANDOM%$spaceSize ))
+    echo $newAgentPosition
+  }
+  oldAgent1Position=$agent1Position
+  agent1Position=$($agent1Strategy $oldAgent1Position)
+  [ ${#blocksArr[@]} -gt 0 ] && [ "${space[agent1Position]}" == "$blockChar" ] && agent1Position=$oldAgent1Position
+  oldAgent2Position=$agent2Position
+  agent2Position=$($agent2Strategy $oldAgent2Position)
+  [ ${#blocksArr[@]} -gt 0 ] && [ "${space[agent2Position]}" == "$blockChar" ] && agent2Position=$oldAgent2Position
   tput cup 0 0 # Faster than reset or clear.
   space[$agent1Position]="1"
   space[$agent2Position]="2"
@@ -87,7 +139,16 @@ while true; do
   fi
   (( count++ ))
   [ $agent1Position -eq $agent2Position ] && break
+  space[$agent1Position]="."
+  space[$agent2Position]="."
   [ ! -z "$pauseInterval" ] && sleep $pauseInterval
 done
 # Report
-echo "Coincidence happened after $count movements!" 
+if [ "$isRawOutput" != "true" ]; then
+  echo "Coincidence happened at last!"
+  template="Movements: %d -- Width: %d -- Height: %d -- Size: %d"
+else
+  echo "Count,Width,Height,Plane Size"
+  template="%d,%d,%d,%d"
+fi
+printf "$template\n" $count $width $height $spaceSize
