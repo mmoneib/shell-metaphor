@@ -17,23 +17,23 @@ function print_error {
 }
 
 function print_help {
-  echo "Stochastic simulation of coincidence occurring between two independent agents."
-  echo "Options:"
-  echo "\tHeight (h): Height of the plane of movement."
-  echo "\tWidth (w): Width of the plane of movement."
-  echo "\tPause Interval (w): Time between each movement, in seconds."
-  echo "\tStrategy of Agent 1 (s): One of the strategy enumerations below."
-  echo "\tStrategy of Agent 2 (S): One of the strategy enumerations below."
-  echo "\tBlocks: Comma-separated list of blocked positions on the plane."
-  echo "Enumerations:"
-  echo "\tStrategy:"
-  echo "\t\trandom_walk: Agent moves in any of the 4 main directions free of boundaries in the plane with respect to his last position."
-  echo "\t\tstationary: Agent doesn't move."
-  echo "\t\tteleportation: Agent moves in any slot in the plane free of boundaries, indepent to his last position."
-  echo "Examples:"
-  echo "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 1"
-  echo "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 0.1 -b 1,2,3,5,7"
- print_usage
+  printf "Stochastic simulation of coincidence occurring between two independent agents.\n"
+  printf "Options:\n"
+  printf "\tHeight (h): Height of the plane of movement.\n"
+  printf "\tWidth (w): Width of the plane of movement.\n"
+  printf "\tPause Interval (w): Time between each movement, in seconds.\n"
+  printf "\tStrategy of Agent 1 (s): One of the strategy enumerations below.\n"
+  printf "\tStrategy of Agent 2 (S): One of the strategy enumerations below.\n"
+  printf "\tBlocks: Comma-separated list of blocked positions on the plane.\n"
+  printf "Enumerations:\n"
+  printf "\tStrategy:\n"
+  printf "\t\trandom_walk: Agent moves in any of the 4 main directions free of boundaries in the plane with respect to his last position.\n"
+  printf "\t\tstationary: Agent doesn't move.\n"
+  printf "\t\tteleportation: Agent moves in any slot in the plane free of boundaries, indepent to his last position.\n"
+  printf "Examples:\n"
+  printf "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 1\n"
+  printf "\t$0 -l 10 -w 10 -s random_walk -S stationary -p 0.1 -b 1,2,3,5,7\n"
+  print_usage
 }
 
 function print_usage {
